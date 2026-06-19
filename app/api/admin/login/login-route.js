@@ -1,15 +1,16 @@
-import { createClient } from '@supabase/supabase-js'
 import bcrypt from 'bcryptjs'
 import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
-// ใช้ service role key ฝั่ง server เท่านั้น (ไม่ใช่ anon key)
-// เพราะต้องอ่าน password_hash ซึ่ง RLS ปกติจะบล็อกไว้สำหรับ anon
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-)
+export const dynamic = 'force-dynamic'
 
 export async function POST(request) {
+  // สร้าง client ใน function ไม่ใช่ระดับ module — ป้องกัน build error
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  )
+
   try {
     const { username, password } = await request.json()
 
@@ -20,7 +21,6 @@ export async function POST(request) {
       )
     }
 
-    // ดึงข้อมูล admin ตาม username (เฉพาะ active เท่านั้น — ข้อ 14 ของ grill session)
     const { data: admin, error } = await supabaseAdmin
       .from('admin_users')
       .select('id, username, password_hash, role, is_active')
@@ -28,8 +28,6 @@ export async function POST(request) {
       .single()
 
     if (error || !admin) {
-      // ไม่บอกว่า "username ไม่มี" หรือ "password ผิด" แยกกัน
-      // เพื่อไม่ให้คนนอกรู้ว่า username ไหนมีอยู่จริงในระบบ
       return NextResponse.json(
         { error: 'username หรือ password ไม่ถูกต้อง' },
         { status: 401 }
@@ -52,7 +50,6 @@ export async function POST(request) {
       )
     }
 
-    // login สำเร็จ — ตั้ง cookie เก็บ session แบบง่าย (ไม่ใช่ JWT เต็มรูปแบบ)
     const response = NextResponse.json({
       success: true,
       role: admin.role,
@@ -64,10 +61,10 @@ export async function POST(request) {
       username: admin.username,
       role: admin.role
     }), {
-      httpOnly: true,      // JS ฝั่ง browser อ่านไม่ได้ ป้องกัน XSS
+      httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 60 * 60 * 8, // 8 ชั่วโมง
+      maxAge: 60 * 60 * 8,
       path: '/'
     })
 

@@ -4,12 +4,13 @@ import { NextResponse } from 'next/server'
 
 // service role key เพราะต้อง insert ข้อมูลที่ RLS ของ anon ไม่อนุญาตให้คนทั่วไป insert ตรงๆ
 // (ป้องกันคนยิง insert ตรงไป Supabase ข้าม validation logic ของเรา)
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-)
+export const dynamic = 'force-dynamic'
 
 export async function POST(request) {
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  )
   try {
     const formData = await request.formData()
 
