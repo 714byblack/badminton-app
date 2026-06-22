@@ -146,16 +146,16 @@ export default function TournamentsAdminPage() {
             <form onSubmit={handleSubmit}>
               <div style={{ marginBottom: 14 }}>
                 <label style={lbl}>ชื่อรายการ *</label>
-                <input style={inp} value={name} onChange={e => handleNameChange(e.target.value)} placeholder="เช่น ตบแป๊ก แม็คโชย 2027" />
+                <input style={inp} value={name} onChange={e => handleNameChange(e.target.value)} placeholder="ชื่อรายการแข่งขัน" />
               </div>
               <div style={{ marginBottom: 14 }}>
                 <label style={lbl}>Slug (URL) * <span style={{ fontWeight: 400, color: '#9ca3af' }}>— ตัวอักษรอังกฤษพิมพ์เล็ก ตัวเลข และ - เท่านั้น</span></label>
-                <input style={{ ...inp, fontFamily: 'monospace' }} value={slug} onChange={e => handleSlugChange(e.target.value)} placeholder="tobpaek-2027" />
+                <input style={{ ...inp, fontFamily: 'monospace' }} value={slug} onChange={e => handleSlugChange(e.target.value)} placeholder="event-name-2027" />
                 {slug && <div style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>URL จะเป็น: /{slug}/register</div>}
               </div>
               <div style={{ marginBottom: 14 }}>
                 <label style={lbl}>สถานที่จัดการแข่งขัน</label>
-                <input style={inp} value={venue} onChange={e => setVenue(e.target.value)} placeholder="เช่น สนามแบดมินตันโรงพยาบาลบุรีรัมย์" />
+                <input style={inp} value={venue} onChange={e => setVenue(e.target.value)} placeholder="ชื่อสนาม / สถานที่" />
               </div>
               <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
                 <div style={{ flex: 1 }}>
