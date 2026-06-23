@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useParams } from 'next/navigation'
 
 const levels = [
-  { id: 'hospital', name: 'หน้าโรงบาล', detail: '(มือใหม่)' },
+  { id: 'hospital', name: 'ไม่เคยเเข่ง', detail: '(มือใหม่)' },
   { id: 'bg', name: 'BG', detail: 'ระดับกลาง' },
   { id: 's', name: 'S', detail: 'ระดับกลาง-สูง' },
   { id: 'n', name: 'N', detail: 'ระดับสูง' },

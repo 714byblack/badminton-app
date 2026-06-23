@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js'
 
 const LEVELS = [
   { key: 'all', name: 'ทั้งหมด' },
-  { key: 'hospital', name: 'หน้าโรงบาล' },
+  { key: 'hospital', name: 'ไม่เคยเเข่ง' },
   { key: 'bg', name: 'BG' },
   { key: 's', name: 'S' },
   { key: 'n', name: 'N' },
