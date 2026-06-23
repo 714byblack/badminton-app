@@ -28,6 +28,8 @@ export default function TournamentsAdminPage() {
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
+  const [deletingId, setDeletingId] = useState(null)
+
   const [name, setName] = useState('')
   const [slug, setSlug] = useState('')
   const [slugManual, setSlugManual] = useState(false)
@@ -50,6 +52,24 @@ export default function TournamentsAdminPage() {
       .order('date_start', { ascending: false })
     setTournaments(data || [])
     setLoading(false)
+  }
+
+  async function handleDelete(tournament) {
+    if (!confirm('ลบรายการ "' + tournament.name + '" แน่ใจไหมครับ?\nรายการจะถูกซ่อนแต่ข้อมูลยังอยู่ กู้คืนได้ภายหลัง')) return
+    setDeletingId(tournament.id)
+    try {
+      const res = await fetch('/api/admin/tournaments/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tournament_id: tournament.id })
+      })
+      const data = await res.json()
+      if (!res.ok) { alert(data.error || 'ลบไม่สำเร็จ'); setDeletingId(null); return }
+      setSuccessMsg('ลบรายการ "' + tournament.name + '" เรียบร้อยแล้ว')
+      loadTournaments()
+      setTimeout(() => setSuccessMsg(''), 4000)
+    } catch { alert('เชื่อมต่อระบบไม่ได้') }
+    setDeletingId(null)
   }
 
   function handleNameChange(val) {
@@ -133,6 +153,9 @@ export default function TournamentsAdminPage() {
               <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                 <a href={'/' + t.slug + '/register'} target="_blank" style={{ padding: '5px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600, border: '1px solid #e5e7eb', background: 'white', color: '#4b5563', textDecoration: 'none' }}>สมัคร ↗</a>
                 <a href={'/' + t.slug + '/players'} target="_blank" style={{ padding: '5px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600, border: '1px solid #e5e7eb', background: 'white', color: '#4b5563', textDecoration: 'none' }}>รายชื่อ ↗</a>
+                <button onClick={() => handleDelete(t)} disabled={deletingId === t.id} style={{ padding: '5px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600, border: '1px solid #fecaca', background: '#fee2e2', color: '#dc2626', cursor: deletingId === t.id ? 'not-allowed' : 'pointer', opacity: deletingId === t.id ? 0.6 : 1 }}>
+                  {deletingId === t.id ? '...' : '🗑️ ลบ'}
+                </button>
               </div>
             )}
           </div>
@@ -146,16 +169,16 @@ export default function TournamentsAdminPage() {
             <form onSubmit={handleSubmit}>
               <div style={{ marginBottom: 14 }}>
                 <label style={lbl}>ชื่อรายการ *</label>
-                <input style={inp} value={name} onChange={e => handleNameChange(e.target.value)} placeholder="ชื่อรายการแข่งขัน" />
+                <input style={inp} value={name} onChange={e => handleNameChange(e.target.value)} placeholder="เช่น ตบแป๊ก แม็คโชย 2027" />
               </div>
               <div style={{ marginBottom: 14 }}>
                 <label style={lbl}>Slug (URL) * <span style={{ fontWeight: 400, color: '#9ca3af' }}>— ตัวอักษรอังกฤษพิมพ์เล็ก ตัวเลข และ - เท่านั้น</span></label>
-                <input style={{ ...inp, fontFamily: 'monospace' }} value={slug} onChange={e => handleSlugChange(e.target.value)} placeholder="event-name-2027" />
+                <input style={{ ...inp, fontFamily: 'monospace' }} value={slug} onChange={e => handleSlugChange(e.target.value)} placeholder="tobpaek-2027" />
                 {slug && <div style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>URL จะเป็น: /{slug}/register</div>}
               </div>
               <div style={{ marginBottom: 14 }}>
                 <label style={lbl}>สถานที่จัดการแข่งขัน</label>
-                <input style={inp} value={venue} onChange={e => setVenue(e.target.value)} placeholder="ชื่อสนาม / สถานที่" />
+                <input style={inp} value={venue} onChange={e => setVenue(e.target.value)} placeholder="เช่น สนามแบดมินตันโรงพยาบาลบุรีรัมย์" />
               </div>
               <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
                 <div style={{ flex: 1 }}>
