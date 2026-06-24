@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import { useState, useEffect } from 'react'
+import supabase from '@/lib/supabase'
 
 function generateSlug(name) {
   return name
@@ -14,13 +14,7 @@ function generateSlug(name) {
 }
 
 export default function TournamentsAdminPage() {
-  const supabase = useMemo(() => {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    if (!url || !key) return null
-    return createClient(url, key)
-  }, [])
-
+  
   const [session, setSession] = useState(null)
   const [tournaments, setTournaments] = useState([])
   const [loading, setLoading] = useState(true)

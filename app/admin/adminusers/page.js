@@ -1,34 +1,25 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import { useState, useEffect } from 'react'
 
 const ROLE_LABEL = {
-  ceo:     { text: '👑 CEO',         color: '#7c3aed', bg: '#ede9fe' },
-  manager: { text: '🧑‍💼 Manager',    color: '#2563eb', bg: '#dbeafe' },
-  admin:   { text: '📋 Admin',        color: '#92400e', bg: '#fef3c7' },
+  ceo:     { text: '👑 CEO',      color: '#7c3aed', bg: '#ede9fe' },
+  manager: { text: '🧑‍💼 Manager', color: '#2563eb', bg: '#dbeafe' },
+  admin:   { text: '📋 Admin',    color: '#92400e', bg: '#fef3c7' },
 }
 
 export default function AdminUsersPage() {
-  const supabase = useMemo(() => {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    if (!url || !key) return null
-    return createClient(url, key)
-  }, [])
-
   const [session, setSession] = useState(null)
   const [admins, setAdmins] = useState([])
   const [tournaments, setTournaments] = useState([])
-  const [accessMap, setAccessMap] = useState({}) // { admin_id: [tournament_id, ...] }
+  const [accessMap, setAccessMap] = useState({})
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
-  const [expandedId, setExpandedId] = useState(null) // admin ที่กำลังจัดการสิทธิ์อยู่
+  const [expandedId, setExpandedId] = useState(null)
 
-  // form state
   const [newUsername, setNewUsername] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [showNewPwd, setShowNewPwd] = useState(false)
@@ -41,21 +32,21 @@ export default function AdminUsersPage() {
   }, [])
 
   async function loadAll() {
-    if (!supabase) return
-    const [{ data: a }, { data: t }, { data: acc }] = await Promise.all([
-      supabase.from('admin_users').select('id, username, role, is_active, created_at').order('created_at'),
-      supabase.from('tournaments').select('id, name, slug').eq('is_deleted', false).order('date_start', { ascending: false }),
-      supabase.from('admin_tournament_access').select('admin_id, tournament_id')
-    ])
-    setAdmins(a || [])
-    setTournaments(t || [])
-    // สร้าง map: admin_id -> [tournament_id, ...]
-    const map = {}
-    ;(acc || []).forEach(row => {
-      if (!map[row.admin_id]) map[row.admin_id] = []
-      map[row.admin_id].push(row.tournament_id)
-    })
-    setAccessMap(map)
+    try {
+      const res = await fetch('/api/admin/adminusers')
+      if (!res.ok) { setLoading(false); return }
+      const data = await res.json()
+      setAdmins(data.admins || [])
+      setTournaments(data.tournaments || [])
+      const map = {}
+      ;(data.access || []).forEach(row => {
+        if (!map[row.admin_id]) map[row.admin_id] = []
+        map[row.admin_id].push(row.tournament_id)
+      })
+      setAccessMap(map)
+    } catch (e) {
+      console.error(e)
+    }
     setLoading(false)
   }
 
@@ -115,7 +106,7 @@ export default function AdminUsersPage() {
         <div>
           <div style={{ fontSize: 22, fontWeight: 700 }}>🔑 จัดการแอดมิน</div>
           <div style={{ fontSize: 13, color: '#9ca3af', marginTop: 2 }}>
-            {isCeo ? 'เพิ่มผู้ดูแลระบบและมอบสิทธิ์เข้าถึงรายการแข่งขัน' : 'ไม่มีสิทธิ์เข้าถึงหน้านี้'}
+            {isCeo ? 'เพิ่มผู้ดูแลระบบและมอบสิทธิ์รายการแข่งขัน' : 'ไม่มีสิทธิ์เข้าถึงหน้านี้'}
           </div>
         </div>
         {isCeo && (
@@ -143,6 +134,9 @@ export default function AdminUsersPage() {
 
           <div style={{ background: 'white', borderRadius: 10, boxShadow: '0 1px 3px rgba(0,0,0,0.08)', padding: 20 }}>
             {loading && <div style={{ color: '#9ca3af', fontSize: 13 }}>กำลังโหลด...</div>}
+            {!loading && admins.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#9ca3af', fontSize: 13 }}>ยังไม่มีแอดมินอื่นในระบบ</div>
+            )}
 
             {admins.map(a => {
               const r = ROLE_LABEL[a.role] || ROLE_LABEL.admin
@@ -176,15 +170,12 @@ export default function AdminUsersPage() {
                     )}
                   </div>
 
-                  {/* ส่วน assign tournament สำหรับ Manager */}
                   {isExpanded && a.role === 'manager' && (
                     <div style={{ marginTop: 10, background: '#f8fafc', borderRadius: 8, padding: 12 }}>
                       <div style={{ fontSize: 12, fontWeight: 700, color: '#4b5563', marginBottom: 8 }}>
                         รายการที่มอบสิทธิ์ให้ {a.username}:
                       </div>
-                      {tournaments.length === 0 && (
-                        <div style={{ fontSize: 12, color: '#9ca3af' }}>ยังไม่มีรายการแข่งขันในระบบ</div>
-                      )}
+                      {tournaments.length === 0 && <div style={{ fontSize: 12, color: '#9ca3af' }}>ยังไม่มีรายการแข่งขันในระบบ</div>}
                       {tournaments.map(t => {
                         const hasAccess = myAccess.includes(t.id)
                         return (
@@ -195,11 +186,7 @@ export default function AdminUsersPage() {
                             </div>
                             <button
                               onClick={() => hasAccess ? handleRevoke(a.id, t.id) : handleGrant(a.id, t.id)}
-                              style={{
-                                padding: '4px 12px', borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: 'pointer', border: 'none',
-                                background: hasAccess ? '#fee2e2' : '#dcfce7',
-                                color: hasAccess ? '#dc2626' : '#15803d'
-                              }}
+                              style={{ padding: '4px 12px', borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: 'pointer', border: 'none', background: hasAccess ? '#fee2e2' : '#dcfce7', color: hasAccess ? '#dc2626' : '#15803d' }}
                             >
                               {hasAccess ? '✕ ถอนสิทธิ์' : '✓ มอบสิทธิ์'}
                             </button>
@@ -213,7 +200,6 @@ export default function AdminUsersPage() {
             })}
           </div>
 
-          {/* MODAL เพิ่ม admin ใหม่ */}
           {showModal && (
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}>
               <div style={{ background: 'white', borderRadius: 12, padding: 28, width: '100%', maxWidth: 400 }}>

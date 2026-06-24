@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import supabase from '@/lib/supabase'
 
 const LEVELS = [
   { key: 'all', name: 'ทั้งหมด' },
