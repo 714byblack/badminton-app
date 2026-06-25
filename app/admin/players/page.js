@@ -11,6 +11,7 @@ export default function PlayersPage() {
   const [rejectingId, setRejectingId] = useState(null)
   const [rejectReason, setRejectReason] = useState('')
   const [actionError, setActionError] = useState('')
+  const [loadingSlip, setLoadingSlip] = useState(null) // team_id ที่กำลังโหลด signed URL
 
   useEffect(() => {
     fetch('/api/admin/session')
@@ -26,7 +27,7 @@ export default function PlayersPage() {
     const { data, error } = await supabase
       .from('teams')
       .select(`
-        id, team_name, level, phone, status, reject_note, created_at,
+        id, team_name, level, phone, status, reject_note, slip_url, created_at,
         players ( id, player_no, fullname, nickname, age, photo_url )
       `)
       .order('created_at', { ascending: false })
@@ -66,6 +67,17 @@ export default function PlayersPage() {
     setRejectingId(null)
     setRejectReason('')
     loadTeams()
+  }
+
+  async function openSlip(slipPath) {
+    setLoadingSlip(slipPath)
+    try {
+      const res = await fetch('/api/admin/slip?path=' + encodeURIComponent(slipPath))
+      const data = await res.json()
+      if (!res.ok) { alert(data.error || 'เปิดสลิปไม่สำเร็จ'); return }
+      window.open(data.url, '_blank')
+    } catch { alert('เชื่อมต่อระบบไม่ได้') }
+    setLoadingSlip(null)
   }
 
   if (loading || !session) {
@@ -123,8 +135,21 @@ export default function PlayersPage() {
                   <div style={{ fontSize: 12, color: '#9ca3af' }}>
                     {team.players.map(p => p.fullname).join(' · ')} · ☎ {team.phone}
                   </div>
+                  {team.slip_url
+                    ? <div style={{ fontSize: 11, color: '#15803d', marginTop: 2 }}>🧾 มีสลิปแล้ว</div>
+                    : <div style={{ fontSize: 11, color: '#d97706', marginTop: 2 }}>⚠️ ยังไม่มีสลิป</div>
+                  }
                 </div>
-                <div style={{ display: 'flex', gap: 6 }}>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                  {team.slip_url && (
+                    <button
+                      onClick={() => openSlip(team.slip_url)}
+                      disabled={loadingSlip === team.slip_url}
+                      style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #7c3aed', background: 'white', color: '#7c3aed', cursor: 'pointer', fontWeight: 600 }}
+                    >
+                      {loadingSlip === team.slip_url ? '...' : '🧾 ดูสลิป'}
+                    </button>
+                  )}
                   <button
                     onClick={() => handleApprove(team.id)}
                     style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #16a34a', background: 'white', color: '#15803d', cursor: 'pointer', fontWeight: 600 }}
@@ -180,7 +205,18 @@ export default function PlayersPage() {
                 <div style={{ fontSize: 11, color: '#dc2626', marginTop: 2 }}>เหตุผล: {team.reject_note}</div>
               )}
             </div>
-            {statusBadge(team.status)}
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              {team.slip_url && (
+                <button
+                  onClick={() => openSlip(team.slip_url)}
+                  disabled={loadingSlip === team.slip_url}
+                  style={{ padding: '4px 10px', fontSize: 11, borderRadius: 6, border: '1px solid #7c3aed', background: 'white', color: '#7c3aed', cursor: 'pointer', fontWeight: 600 }}
+                >
+                  {loadingSlip === team.slip_url ? '...' : '🧾 ดูสลิป'}
+                </button>
+              )}
+              {statusBadge(team.status)}
+            </div>
           </div>
         ))}
 
