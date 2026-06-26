@@ -50,24 +50,6 @@ export default function AdminUsersPage() {
     setLoading(false)
   }
 
-  async function handleToggle(admin_id, current_is_active) {
-    const action = current_is_active ? 'ระงับ' : 'เปิดใช้งาน'
-    if (!confirm(action + 'บัญชีนี้แน่ใจไหมครับ?')) return
-    try {
-      const res = await fetch('/api/admin/adminusers/toggle', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ admin_id, is_active: !current_is_active })
-      })
-      const data = await res.json()
-      if (!res.ok) { alert(data.error || 'เกิดข้อผิดพลาด'); return }
-      const msg = !current_is_active ? 'เปิดใช้งานแล้ว' : 'ระงับแล้ว'
-      setSuccessMsg(msg + ' เรียบร้อย')
-      loadAll()
-      setTimeout(() => setSuccessMsg(''), 3000)
-    } catch { alert('เชื่อมต่อระบบไม่ได้') }
-  }
-
   function resetForm() {
     setNewUsername(''); setNewPassword(''); setNewRole('admin')
     setFormError(''); setShowModal(false); setShowNewPwd(false)
@@ -197,20 +179,6 @@ export default function AdminUsersPage() {
                         </div>
                       )}
                     </div>
-                    {!isSelf && a.role !== 'ceo' && (
-                      <button
-                        onClick={() => handleToggle(a.id, a.is_active)}
-                        style={{
-                          padding: '5px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600,
-                          border: a.is_active ? '1px solid #fca5a5' : '1px solid #86efac',
-                          background: a.is_active ? '#fee2e2' : '#dcfce7',
-                          color: a.is_active ? '#dc2626' : '#15803d',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        {a.is_active ? '🔒 ระงับ' : '🔓 เปิดใช้งาน'}
-                      </button>
-                    )}
                     <div style={{ display: 'flex', gap: 6 }}>
                       {a.role === 'manager' && !isSelf && (
                         <button
