@@ -50,6 +50,24 @@ export default function AdminUsersPage() {
     setLoading(false)
   }
 
+  async function handleToggle(admin_id, current_is_active) {
+    const action = current_is_active ? 'ระงับ' : 'เปิดใช้งาน'
+    if (!confirm(action + 'บัญชีนี้แน่ใจไหมครับ?')) return
+    try {
+      const res = await fetch('/api/admin/adminusers/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ admin_id, is_active: !current_is_active })
+      })
+      const data = await res.json()
+      if (!res.ok) { alert(data.error || 'เกิดข้อผิดพลาด'); return }
+      const msg = !current_is_active ? 'เปิดใช้งานแล้ว' : 'ระงับแล้ว'
+      setSuccessMsg(msg + ' เรียบร้อย')
+      loadAll()
+      setTimeout(() => setSuccessMsg(''), 3000)
+    } catch { alert('เชื่อมต่อระบบไม่ได้') }
+  }
+
   function resetForm() {
     setNewUsername(''); setNewPassword(''); setNewRole('admin')
     setFormError(''); setShowModal(false); setShowNewPwd(false)
@@ -74,6 +92,25 @@ export default function AdminUsersPage() {
       setTimeout(() => setSuccessMsg(''), 4000)
     } catch { setFormError('เชื่อมต่อระบบไม่ได้') }
     setSubmitting(false)
+  }
+
+  async function handleToggle(admin_id, current_is_active) {
+    const action = current_is_active ? 'ระงับ' : 'เปิดใช้งาน'
+    if (!confirm('ต้องการ' + action + 'แอดมินคนนี้แน่ใจไหมครับ?')) return
+    const res = await fetch('/api/admin/adminusers/toggle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ admin_id, is_active: !current_is_active })
+    })
+    if (res.ok) {
+      const data = await res.json()
+      setSuccessMsg(!data.is_active ? 'ระงับแอดมินเรียบร้อยแล้ว' : 'เปิดใช้งานแอดมินเรียบร้อยแล้ว')
+      loadAll()
+      setTimeout(() => setSuccessMsg(''), 4000)
+    } else {
+      const d = await res.json()
+      alert(d.error)
+    }
   }
 
   async function handleGrant(admin_id, tournament_id) {
@@ -160,14 +197,42 @@ export default function AdminUsersPage() {
                         </div>
                       )}
                     </div>
-                    {a.role === 'manager' && !isSelf && (
+                    {!isSelf && a.role !== 'ceo' && (
                       <button
-                        onClick={() => setExpandedId(isExpanded ? null : a.id)}
-                        style={{ padding: '5px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600, border: '1px solid #e5e7eb', background: isExpanded ? '#f0fdf4' : 'white', color: isExpanded ? '#15803d' : '#4b5563', cursor: 'pointer' }}
+                        onClick={() => handleToggle(a.id, a.is_active)}
+                        style={{
+                          padding: '5px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                          border: a.is_active ? '1px solid #fca5a5' : '1px solid #86efac',
+                          background: a.is_active ? '#fee2e2' : '#dcfce7',
+                          color: a.is_active ? '#dc2626' : '#15803d',
+                          cursor: 'pointer'
+                        }}
                       >
-                        {isExpanded ? '▲ ปิด' : '🔑 มอบสิทธิ์'}
+                        {a.is_active ? '🔒 ระงับ' : '🔓 เปิดใช้งาน'}
                       </button>
                     )}
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      {a.role === 'manager' && !isSelf && (
+                        <button
+                          onClick={() => setExpandedId(isExpanded ? null : a.id)}
+                          style={{ padding: '5px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600, border: '1px solid #e5e7eb', background: isExpanded ? '#f0fdf4' : 'white', color: isExpanded ? '#15803d' : '#4b5563', cursor: 'pointer' }}
+                        >
+                          {isExpanded ? '▲ ปิด' : '🔑 มอบสิทธิ์'}
+                        </button>
+                      )}
+                      {!isSelf && (
+                        <button
+                          onClick={() => handleToggle(a.id, a.is_active)}
+                          style={{
+                            padding: '5px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: 'pointer', border: 'none',
+                            background: a.is_active ? '#fee2e2' : '#dcfce7',
+                            color: a.is_active ? '#dc2626' : '#15803d'
+                          }}
+                        >
+                          {a.is_active ? '🔒 ระงับ' : '🔓 เปิดใช้'}
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {isExpanded && a.role === 'manager' && (
