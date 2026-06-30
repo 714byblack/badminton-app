@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import supabase from '@/lib/supabase'
 
 const LEVELS = [
@@ -22,13 +22,6 @@ const STATUS_BADGE = {
 }
 
 export default function PlayersPage() {
-
-const supabase = useMemo(() => {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!url || !key) return null
-  return createClient(url, key)
-}, [])
 
   const [teams, setTeams] = useState([])
   const [loading, setLoading] = useState(true)
